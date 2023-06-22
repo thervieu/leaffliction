@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from utils.Distribution_window import analysis
+from utils.Augmentation_window import augmentation
 
 def main() ->int :
 
@@ -35,12 +36,24 @@ def main() ->int :
   leafVar.set("Select the Leaf")
   options = ["Apples", "Grapes"]
   leafSelect = ttk.Combobox(leafFont, textvariable=leafVar, values=options, state="readonly")
-
-  #Onglet Analysis
   leafSelect.pack()
+
+  #Onglet Analysis / Distribution
   buttonAnalyse = tk.Button(onglet1, text="Analysis of the Data Set", command=lambda:analysis(leafVar.get()))
 
+  #Onglet Augmentation
+  expVar = tk.IntVar(value=0)
+  tk.Radiobutton(onglet2, text="Flip", font=("Arial", 12), variable=expVar, value=0).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Rotate", font=("Arial", 12), variable=expVar, value=1).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Contrast", font=("Arial", 12), variable=expVar, value=2).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Brightness", font=("Arial", 12), variable=expVar, value=3).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Shear", font=("Arial", 12), variable=expVar, value=4).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Projection", font=("Arial", 12), variable=expVar, value=5).pack(anchor="w")
+  tk.Radiobutton(onglet2, text="Blur", font=("Arial", 12), variable=expVar, value=6).pack(anchor="w")
+  buttonAugmentation = tk.Button(onglet2, text="Data augmentation", command=lambda:augmentation(leafVar.get()))
+
   buttonAnalyse.pack()
+  buttonAugmentation.pack()
 
   # Start the main event loop
   window.mainloop()
