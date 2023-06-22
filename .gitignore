@@ -3,3 +3,4 @@ transformed_images
 leaves*.zip
 Apples
 Grapes
+__pycache__

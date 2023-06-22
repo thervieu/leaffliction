@@ -18,9 +18,9 @@ def getCountDictionary(directory: str) -> CountDict:
     # number of photos in each subdir as values
     count_dict: CountDict = CountDict()
     for subdir in os.listdir(directory):
-        if os.path.isdir(directory+subdir) is False:
-            return print("{} is not a directory".format(directory+subdir))
-        count_dict[subdir] = len(os.listdir(directory+subdir))
+        if os.path.isdir(os.path.join(directory,subdir)) is False:
+            return print("{} is not a directory".format(os.path.join(directory,subdir)))
+        count_dict[subdir] = len(os.listdir(os.path.join(directory,subdir)))
     return count_dict
 
 def main() -> None:
