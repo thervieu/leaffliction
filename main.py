@@ -39,7 +39,7 @@ def main() ->int :
   leafSelect.pack()
 
   #Onglet Analysis / Distribution
-  buttonAnalyse = tk.Button(onglet1, text="Analysis of the Data Set", command=lambda:analysis(leafVar.get()))
+  buttonAnalyse = tk.Button(onglet1, text="Analysis of the Data Set", command=lambda:analysis(leafVar.get(), expVar.get()))
 
   #Onglet Augmentation
   expVar = tk.IntVar(value=0)
@@ -50,7 +50,7 @@ def main() ->int :
   tk.Radiobutton(onglet2, text="Shear", font=("Arial", 12), variable=expVar, value=4).pack(anchor="w")
   tk.Radiobutton(onglet2, text="Projection", font=("Arial", 12), variable=expVar, value=5).pack(anchor="w")
   tk.Radiobutton(onglet2, text="Blur", font=("Arial", 12), variable=expVar, value=6).pack(anchor="w")
-  buttonAugmentation = tk.Button(onglet2, text="Data augmentation", command=lambda:augmentation(leafVar.get()))
+  buttonAugmentation = tk.Button(onglet2, text="Data augmentation", command=lambda:augmentation(leafVar.get(), expVar.get()))
 
   buttonAnalyse.pack()
   buttonAugmentation.pack()
