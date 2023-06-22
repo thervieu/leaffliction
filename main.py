@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from utils.Distribution_window import analysis
 
 def main() ->int :
 
@@ -27,6 +28,19 @@ def main() ->int :
   # Affichage du widget Notebook
   notebook.pack(expand=True, fill="both")
 
+  #Define option for selection
+  leafFont = tk.LabelFrame(window, text="Leaf")
+  leafFont.pack(padx=100, pady=1)
+  leafVar = tk.StringVar()
+  leafVar.set("Select the Leaf")
+  options = ["Apples", "Grapes"]
+  leafSelect = ttk.Combobox(leafFont, textvariable=leafVar, values=options, state="readonly")
+
+  #Onglet Analysis
+  leafSelect.pack()
+  buttonAnalyse = tk.Button(onglet1, text="Analysis of the Data Set", command=lambda:analysis(leafVar.get()))
+
+  buttonAnalyse.pack()
 
   # Start the main event loop
   window.mainloop()

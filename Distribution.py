@@ -23,21 +23,25 @@ def getCountDictionary(directory: str) -> CountDict:
         count_dict[subdir] = len(os.listdir(os.path.join(directory,subdir)))
     return count_dict
 
+def getNameValue(leaf:str) :
+    count_dict = getCountDictionary(leaf)
+    names = list(count_dict.keys())
+    values = list(count_dict.values())
+    plt.bar(range(len(count_dict)), values, tick_label=names, color=['blue', 'orange', 'green', 'red'])
+    plt.figure()
+    plt.pie(values, labels=names)
+    plt.show()
+    
+
 def main() -> None:
     # argument
     if len(sys.argv) != 2:
         return help()
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
-    count_dict = getCountDictionary(os.path.join(sys.argv[1], ''))
-    names = list(count_dict.keys())
-    values = list(count_dict.values())
-
-    plt.bar(range(len(count_dict)), values, tick_label=names, color=['blue', 'orange', 'green', 'red'])
-    plt.figure()
-    plt.pie(values, labels=names)
-    plt.show()
-
+    leafName = os.path.join(sys.argv[1], '')
+    print(leafName)
+    getNameValue(leafName)
 
 if __name__ == "__main__":
     main()
