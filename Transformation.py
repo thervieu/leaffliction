@@ -1,4 +1,4 @@
-import os, sys, imghdr, random
+import os, sys, filetype, random
 from plantcv import plantcv as pcv
 import numpy as np
 from datetime import datetime
@@ -42,7 +42,7 @@ def main() -> None:
         return usage()
     if os.path.isfile(sys.argv[1]) is False:
         return print("Argument {} does not exist".format(sys.argv[1]))
-    if imghdr.what(sys.argv[1]) != 'jpeg':
+    if (filetype.guess(sys.argv[1]) == None or (filetype.guess(sys.argv[1])).extension != 'jpg'):
         return print("Argument {} is not a jpeg img".format(sys.argv[1]))
     transform(sys.argv[1])
 
