@@ -30,7 +30,6 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
         dst (string): directory where resulting images will be stored
         type (string): type of transformation requested
     """
-
     # Initialisation
     img, path, filename = pcv.readimage(img_path)
     pcv.params.debug_outdir = dst
@@ -132,7 +131,6 @@ def plot_images(img_path: str, dst: str) -> None:
         img_path (str): Path to original image
         dst (str): Destination where the transformations were stored
     """
-
     # Get the paths to each transformed image
     img_prefix = dst + '/' + (img_path[2:len(img_path) - 4]
                               if img_path[0:2] == "./"
@@ -146,7 +144,7 @@ def plot_images(img_path: str, dst: str) -> None:
 
     # Check existence of transformed files
     image_names = ['Original Image']
-    img_blur, img_mask, img_roi, img_analyzed, img_landmarks, img_colors = (None,)*6
+    img_blur, img_mask, img_roi, img_analyze, img_marks, img_colors = (None,)*6
     if os.path.isfile(blur_path):
         img_blur, path, filename = pcv.readimage(blur_path)
         image_names.append('Blurred Mask')
@@ -157,10 +155,10 @@ def plot_images(img_path: str, dst: str) -> None:
         img_roi, path, filename = pcv.readimage(roi_path)
         image_names.append('ROI Objects')
     if os.path.isfile(analysis_path):
-        img_analyzed, path, filename = pcv.readimage(analysis_path)
+        img_analyze, path, filename = pcv.readimage(analysis_path)
         image_names.append('Analysed Objects')
     if os.path.isfile(landmark_path):
-        img_landmarks, path, filename = pcv.readimage(landmark_path)
+        img_marks, path, filename = pcv.readimage(landmark_path)
         image_names.append('Pseudolandmarks')
     if os.path.isfile(colors_path):
         img_colors, path, filename = pcv.readimage(colors_path)
@@ -200,20 +198,21 @@ def plot_images(img_path: str, dst: str) -> None:
         plotted += 1
 
     # Plot analyzed image
-    if img_analyzed is not None:
+    if img_analyze is not None:
         plt.subplot(rows, cols, plotted)
-        plt.imshow(img_analyzed)
+        plt.imshow(img_analyze)
         plt.title("Analyzed objects")
         plotted += 1
 
     # Plot image's landmarks
-    if img_landmarks is not None:
+    if img_marks is not None:
         plt.subplot(rows, cols, plotted)
-        plt.imshow(img_landmarks)
+        plt.imshow(img_marks)
         plt.title("Pseudolandmarks")
         plotted += 1
 
     # Display 5 first transformations with original image
+    plt.suptitle("Stored transformations of original image")
     plt.show()
 
     # Display color analysis of image afterwards
@@ -232,6 +231,16 @@ def plot_images(img_path: str, dst: str) -> None:
                    + "'pseudolandmarks', 'colors]")
 @click.argument('file', required=False)
 def main(file, src, dst, type) -> None:
+    # Check if requested type is acceptable
+    known_types = ['all', 'blur', 'mask', 'roi', 'analysis',
+                   'pseudolandmarks', 'colors']
+    if type not in known_types:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        print(f"Requested type '{type}' was not recognised")
+        ctx.exit()
+
+    # Single file transformation
     if file is not None:
         if os.path.isfile(file) is False:
             return print(f"{file} does not exist or is not a file")
@@ -240,10 +249,12 @@ def main(file, src, dst, type) -> None:
             return print(f"{file} is not a jpeg image")
         transform_image(file, dst='.', type=type)
         plot_images(file, dst='.')
+    # Directory transformation
     elif (src is not None and dst is not None):
         if os.path.isdir(src) is False:
             return print(f"{src} does not exist or is not a directory")
         transform_directory(src=src, dst=dst, type=type)
+    # Not enough arguments
     else:
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
