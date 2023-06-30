@@ -2,6 +2,7 @@ import os
 import filetype
 import fnmatch
 from plantcv import plantcv as pcv
+import matplotlib.pyplot as plt
 import click
 
 
@@ -105,6 +106,67 @@ def transform_directory(src: str, dst: str) -> None:
             transform_directory(src=file_path, dst=dst)
 
 
+def plot_images(img_path: str, dst: str) -> None:
+    """
+    In the case where only one file is requested, assignment requires to
+    display the set of image transformations. This does it
+    Arguments:
+        img_path (str): Path to original image
+        dst (str): Destination where the transformations were stored
+    """
+
+    # Get the paths to each transformed image
+    img_original, path, filename = pcv.readimage(img_path)
+    img_prefix = dst + '/' + (img_path[2:len(img_path) - 4]
+                              if img_path[0:2] == "./"
+                              else img_path[0:len(img_path) - 4])
+    img_blur, path, filename = pcv.readimage(img_prefix + "_PCVBLUR.JPG")
+    img_mask, path, filename = pcv.readimage(img_prefix + "_MASKED.JPG")
+    img_roi, path, filename = pcv.readimage(img_prefix + "_ROI_OBJECTS.JPG")
+    img_analyzed, path, filename = pcv.readimage(img_prefix + "_ANALYZED.JPG")
+    img_landmarks, path, filename = pcv.readimage(img_prefix
+                                                  + "_PSEUDOLANDMARKS.JPG")
+    img_colors, path, filename = pcv.readimage(img_prefix + "_COLORS.JPG")
+
+     # Plot original image
+    plt.subplot(2, 3, 1)
+    plt.imshow(img_original)
+    plt.title('Original Image')
+
+    # Plot blurred image
+    plt.subplot(2, 3, 2)
+    plt.imshow(img_blur)
+    plt.title("Blurred mask")
+
+    # Plot masked image
+    plt.subplot(2, 3, 3)
+    plt.imshow(img_mask)
+    plt.title("Masked image")
+
+    # Plot roi image
+    plt.subplot(2, 3, 4)
+    plt.imshow(img_roi)
+    plt.title("ROI objects")
+
+    # Plot analyzed image
+    plt.subplot(2, 3, 5)
+    plt.imshow(img_analyzed)
+    plt.title("Analyzed object")
+
+    # Plot image's landmarks
+    plt.subplot(2, 3, 6)
+    plt.imshow(img_landmarks)
+    plt.title("Pseudolandmarks")
+
+    # Display 5 first transformations with original image
+    plt.show()
+
+    # Display color analysis of image afterwards
+    plt.imshow(img_colors)
+    plt.title("Color histogram")
+    plt.show()
+
+
 @click.command()
 @click.option('--src', default=None, help='Directory of original data')
 @click.option('--dst', default=None, help="Directory of the transformed data")
@@ -117,6 +179,7 @@ def main(file, src, dst) -> None:
            or filetype.guess(file).extension != 'jpg'):
             return print(f"{file} is not a jpeg image")
         transform_image(file, dst='.')
+        plot_images(file, dst='.')
     elif (src is not None and dst is not None):
         if os.path.isdir(src) is False:
             return print(f"{src} does not exist or is not a directory")
