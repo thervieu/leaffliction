@@ -115,12 +115,13 @@ def transform_directory(src: str, dst: str, type: str) -> None:
     file_count = 0
     for filename in os.listdir(src):
         file_path = os.path.join(src, filename)
-        if os.path.isfile(file_path):
+        if os.path.isfile(file_path) and (filetype.guess(file_path) is not None
+           and filetype.guess(file_path).extension == 'jpg'):
             transform_image(img_path=file_path, dst=dst, type=type)
             file_count += 1
         elif os.path.isdir(file_path):
             transform_directory(src=file_path, dst=dst, type=type)
-    print(f"Applied {type} transformations to {file_count} files in {src}")
+    print(f"Applied {type} transformation to {file_count} JPG files in {src}")
 
 
 def plot_images(img_path: str, dst: str) -> None:
