@@ -40,7 +40,6 @@ def main() -> None:
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
     leafName = os.path.join(sys.argv[1], '')
-    print(leafName)
     getNameValue(leafName)
 
 if __name__ == "__main__":

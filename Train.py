@@ -7,7 +7,7 @@ from tensorflow.keras.utils import image_dataset_from_directory
 
 
 def help():
-    print(f'usage: python3 P4.py [folder with images]')
+    print(f'usage: python3 Train.py [folder of images]')
 
 
 def make_model(dataset):
@@ -73,7 +73,7 @@ def main():
         callbacks=[early_stopping, reduce_lr],
     )
 
-    # model.save("model/mymodel.model")
+    model.save("model.keras")
 
 
 

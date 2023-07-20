@@ -1,6 +1,6 @@
-images
-transformed_images
+images*
 leaves*.zip
-Apples
-Grapes
+Apples*
+Grapes*
 __pycache__
+*.keras
