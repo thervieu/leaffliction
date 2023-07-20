@@ -28,7 +28,7 @@ def main():
         images = os.listdir(os.path.join(sys.argv[1], key))
         for _ in range(augment_number):
             cur_img = random.choice(images)
-            augment(os.path.join(sys.argv[1], key,cur_img))
+            augment(os.path.join(sys.argv[1], key, cur_img), plot=False)
             images.remove(cur_img)
         print('Done\n')
     print('All subdirectories augmented')

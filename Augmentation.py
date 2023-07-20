@@ -29,42 +29,46 @@ def plotImage(img, img_change, title) :
 
 # FLIP
 
-def flip(img_path, img) :
+def flip(img_path, img, plot) :
 
     flipped_img = cv2.flip(img, 1)
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Flip.JPG", flipped_img)
 
-    #plot
-    plotImage(img, flipped_img, 'Flipped Image')
+    if plot:
+        #plot
+        plotImage(img, flipped_img, 'Flipped Image')
 
-def rotate(img_path, img) :
+def rotate(img_path, img, plot) :
 
     #rotate
     rotated_img = imutils.rotate_bound(img, random.choice([-30, -20, -10, 10, 20, 30]))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Rotate.JPG", rotated_img)
 
-    #plot
-    plotImage(img, rotated_img, 'Rotated Image')
+    if plot:
+        #plot
+        plotImage(img, rotated_img, 'Rotated Image')
 
-def contrast(img_path, img) :
+def contrast(img_path, img, plot) :
 
     # contrast
     inc_contrast_img = cv2.convertScaleAbs(img, alpha=random.choice([1.1, 1.2, 1.3]), beta=1)
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Contrast.JPG", inc_contrast_img)
 
-    #plot
-    plotImage(img, inc_contrast_img, 'Darkest Image')
+    if plot:
+        #plot
+        plotImage(img, inc_contrast_img, 'Darkest Image')
 
-def brightness(img_path, img) :
+def brightness(img_path, img, plot) :
 
     # brightness
     inc_brightness_img = cv2.convertScaleAbs(img, alpha=1, beta=random.choice([3, 5, 7]))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Brightness.JPG", inc_brightness_img)
 
-    #plot
-    plotImage(img, inc_brightness_img, 'Brightness Image')
+    if plot:
+        #plot
+        plotImage(img, inc_brightness_img, 'Brightness Image')
 
-def shear(img_path, img) :
+def shear(img_path, img, plot) :
 
     # shear
     num_rows, num_cols = img.shape[:2]
@@ -74,10 +78,11 @@ def shear(img_path, img) :
     img_shear = cv2.warpAffine(img, matrix, (num_cols,num_rows))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Shear.JPG", img_shear)
 
-    #plot
-    plotImage(img, img_shear, 'Shear Image')
+    if plot:
+        #plot
+        plotImage(img, img_shear, 'Shear Image')
 
-def projection(img_path, img) :
+def projection(img_path, img, plot) :
 
     # project
     num_rows, num_cols = img.shape[:2]
@@ -87,30 +92,31 @@ def projection(img_path, img) :
     img_projection = cv2.warpPerspective(img, projective_matrix, (num_cols,num_rows))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Projection.JPG", img_projection)
 
-    #plot
-    plotImage(img, img_projection, 'Projection Image')
+    if plot:
+        #plot
+        plotImage(img, img_projection, 'Projection Image')
 
-def augment(img_path: str) -> None:
+def augment(img_path: str, plot=True) -> None:
     # img transformations with openCV
     img = cv2.imread(img_path)
 
     #flip
-    flip(img_path, img)
+    flip(img_path, img, plot)
 
     #rotate
-    rotate(img_path, img)
+    rotate(img_path, img, plot)
 
     # contrast
-    contrast(img_path, img)
+    contrast(img_path, img, plot)
 
     # brightness
-    brightness(img_path, img)
+    brightness(img_path, img, plot)
 
     # shear
-    shear(img_path, img)
+    shear(img_path, img, plot)
 
     # project
-    projection(img_path, img)
+    projection(img_path, img, plot)
 
 
 def main() -> None:
@@ -121,7 +127,8 @@ def main() -> None:
         return help()
     if os.path.isfile(sys.argv[1]) is False:
         return print("Argument {} does not exist".format(sys.argv[1]))
-    if imghdr.what(sys.argv[1]) != 'jpeg':
+    if (filetype.guess(file) is None
+           or filetype.guess(file).extension != 'jpg'):
         return print("Argument {} is not a jpeg img".format(sys.argv[1]))
     augment(sys.argv[1])
 

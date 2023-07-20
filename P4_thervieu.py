@@ -45,15 +45,14 @@ def main():
     #data preprocessing
     data = image_dataset_from_directory(
         sys.argv[1],
-        validation_split=0.3, # 0.7 for training, 0.1 for validation, 0.2 for testing
+        validation_split=0.2, # 0.7 for training, 0.1 for validation, 0.2 for testing
         subset="both",
         seed=42,
         image_size=(128, 128), # takes 4 times less memory and time than (256,256)
     )
     val_batches = tf.data.experimental.cardinality(data[1])
     train_data = data[0]
-    validation_data = data[1].skip((2*val_batches) // 3)
-    test_data = data[1].take((2*val_batches) // 3)
+    validation_data = data[1]
     
     # create model
     model = make_model(train_data)
