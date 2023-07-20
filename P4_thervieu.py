@@ -50,7 +50,6 @@ def main():
         seed=42,
         image_size=(128, 128), # takes 4 times less memory and time than (256,256)
     )
-    val_batches = tf.data.experimental.cardinality(data[1])
     train_data = data[0]
     validation_data = data[1]
     
@@ -69,13 +68,10 @@ def main():
     # fit model
     history = model.fit(
         train_data,
-        epochs=5,
+        epochs=3,
         validation_data=validation_data,
         callbacks=[early_stopping, reduce_lr],
     )
-
-    test_loss, test_acc = model.evaluate(test_data, verbose=2)
-    print("test_acc : ", test_acc)
 
     # model.save("model/mymodel.model")
 
