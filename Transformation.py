@@ -48,17 +48,16 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
                                     object_type='dark')
     mask = pcv.invert(s_thresh)
     mask = pcv.erode(gray_img=mask, ksize=3, i=1)
-
-    # Gaussian blur of mask
-    if type in ['blur', 'all']:
-        gaussian_blur = pcv.gaussian_blur(mask, ksize=(3, 3))
-        pcv.print_image(gaussian_blur, new_image_prefix + "_PCVBLUR.JPG")
     
     # True gaussian blur of image
-    if type in ['trueblur']:
+    if type in ['blur', 'all']:
         true_gaussian_blur = pcv.gaussian_blur(img, ksize=(11, 11))
-        pcv.print_image(true_gaussian_blur, new_image_prefix + "_TRUEBLUR.JPG")
+        pcv.print_image(true_gaussian_blur, new_image_prefix + "_PCVBLUR.JPG")
 
+    # Gaussian blur of mask
+    if type in ['maskblur']:
+        gaussian_blur = pcv.gaussian_blur(mask, ksize=(3, 3))
+        pcv.print_image(gaussian_blur, new_image_prefix + "_MASKBLUR.JPG")
 
     # Masked image
     if type in ['mask', 'all']:
@@ -147,19 +146,19 @@ def plot_images(img_path: str, dst: str) -> None:
     img_prefix = dst + '/' + (img_path[2:len(img_path) - 4]
                               if img_path[0:2] == "./"
                               else img_path[0:len(img_path) - 4])
-    blur_path = img_prefix + "_PCVBLUR.JPG"
+    maskblur_path = img_prefix + "_MASKBLUR.JPG"
     mask_path = img_prefix + "_MASKED.JPG"
     roi_path = img_prefix + "_ROI_OBJECTS.JPG"
     analysis_path = img_prefix + "_ANALYZED.JPG"
     landmark_path = img_prefix + "_PSEUDOLANDMARKS.JPG"
     colors_path = img_prefix + "_COLORS.JPG"
-    trueblur_path = img_prefix + "_TRUEBLUR.JPG"
+    blur_path = img_prefix + "_PCVBLUR.JPG"
 
     # Check existence of transformed files
     image_names = ['Original Image']
-    img_blur, img_mask, img_roi, img_analyze, img_marks, img_colors = (None,)*6
-    if os.path.isfile(blur_path):
-        img_blur, path, filename = pcv.readimage(blur_path)
+    img_blur, img_mask, img_roi, img_analyze, img_marks, img_colors, img_maskblur = (None,)*7
+    if os.path.isfile(maskblur_path):
+        img_maskblur, path, filename = pcv.readimage(maskblur_path)
         image_names.append('Blurred Mask')
     if os.path.isfile(mask_path):
         img_mask, path, filename = pcv.readimage(mask_path)
@@ -175,13 +174,13 @@ def plot_images(img_path: str, dst: str) -> None:
         image_names.append('Pseudolandmarks')
     if os.path.isfile(colors_path):
         img_colors, path, filename = pcv.readimage(colors_path)
-    if os.path.isfile(trueblur_path):
-        img_trueblur, path, filename = pcv.readimage(trueblur_path)
-        image_names.append('Trueblur')
+    if os.path.isfile(blur_path):
+        img_blur, path, filename = pcv.readimage(blur_path)
+        image_names.append('Gaussian blur')
 
     # Initialise plot
     length = len(image_names)
-    rows = 1 if length <= 3 else 2
+    rows = 1 if length <= 3 else 2 if length <= 6 else 3
     cols = length if length <= 3 else 3
     plotted = 1
 
@@ -193,9 +192,9 @@ def plot_images(img_path: str, dst: str) -> None:
     plotted += 1
 
     # Plot blurred mask of image
-    if img_blur is not None:
+    if img_maskblur is not None:
         plt.subplot(rows, cols, plotted)
-        plt.imshow(img_blur)
+        plt.imshow(img_maskblur)
         plt.title("Blurred mask")
         plotted += 1
 
@@ -228,9 +227,9 @@ def plot_images(img_path: str, dst: str) -> None:
         plotted += 1
 
     # Plot image's true blur (assignment's PDF blur was a blur of the mask)
-    if img_trueblur is not None:
+    if img_blur is not None:
         plt.subplot(rows, cols, plotted)
-        plt.imshow(img_trueblur)
+        plt.imshow(img_blur)
         plt.title("True gaussian blur")
         plotted += 1
 
@@ -251,12 +250,12 @@ def plot_images(img_path: str, dst: str) -> None:
 @click.option('--type', default='all',
               help="Type of transformation requested, choose between"
                    + " ['all', 'blur', 'mask', 'roi', 'analysis', "
-                   + "'pseudolandmarks', 'colors]")
+                   + "'pseudolandmarks', 'colors', 'maskblur']")
 @click.argument('file', required=False)
 def main(file, src, dst, type) -> None:
     # Check if requested type is acceptable
     known_types = ['all', 'blur', 'mask', 'roi', 'analysis',
-                   'pseudolandmarks', 'colors', 'trueblur']
+                   'pseudolandmarks', 'colors', 'maskblur']
     if type not in known_types:
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
