@@ -48,7 +48,7 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
                                     object_type='dark')
     mask = pcv.invert(s_thresh)
     mask = pcv.erode(gray_img=mask, ksize=3, i=1)
-    
+
     # True gaussian blur of image
     if type in ['blur', 'all']:
         true_gaussian_blur = pcv.gaussian_blur(img, ksize=(11, 11))
@@ -156,7 +156,8 @@ def plot_images(img_path: str, dst: str) -> None:
 
     # Check existence of transformed files
     image_names = ['Original Image']
-    img_blur, img_mask, img_roi, img_analyze, img_marks, img_colors, img_maskblur = (None,)*7
+    img_blur, img_mask, img_roi, img_analyze, img_marks = (None,)*5
+    img_colors, img_maskblur = (None,)*2
     if os.path.isfile(maskblur_path):
         img_maskblur, path, filename = pcv.readimage(maskblur_path)
         image_names.append('Blurred Mask')
