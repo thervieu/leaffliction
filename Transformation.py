@@ -53,6 +53,12 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
     if type in ['blur', 'all']:
         gaussian_blur = pcv.gaussian_blur(mask, ksize=(3, 3))
         pcv.print_image(gaussian_blur, new_image_prefix + "_PCVBLUR.JPG")
+    
+    # True gaussian blur of image
+    if type in ['trueblur']:
+        true_gaussian_blur = pcv.gaussian_blur(img, ksize=(11, 11))
+        pcv.print_image(true_gaussian_blur, new_image_prefix + "_TRUEBLUR.JPG")
+
 
     # Masked image
     if type in ['mask', 'all']:
@@ -113,7 +119,8 @@ def transform_directory(src: str, dst: str, type: str) -> None:
         type (string): type of transformation requested
     """
     file_count = 0
-    for filename in os.listdir(src):
+    directory_content = os.listdir(src)
+    for filename in directory_content:
         file_path = os.path.join(src, filename)
         if os.path.isfile(file_path) and (filetype.guess(file_path) is not None
            and filetype.guess(file_path).extension == 'jpg'):
@@ -121,7 +128,11 @@ def transform_directory(src: str, dst: str, type: str) -> None:
             file_count += 1
         elif os.path.isdir(file_path):
             transform_directory(src=file_path, dst=dst, type=type)
-    print(f"Applied {type} transformation to {file_count} JPG files in {src}")
+        print(f"\rApplying {type} to {file_count}/{len(directory_content)}...",
+              end='',
+              flush=True)
+    if file_count > 0:
+        print(f"\nApplied {type} to {file_count} JPG files in {src}")
 
 
 def plot_images(img_path: str, dst: str) -> None:
@@ -142,6 +153,7 @@ def plot_images(img_path: str, dst: str) -> None:
     analysis_path = img_prefix + "_ANALYZED.JPG"
     landmark_path = img_prefix + "_PSEUDOLANDMARKS.JPG"
     colors_path = img_prefix + "_COLORS.JPG"
+    trueblur_path = img_prefix + "_TRUEBLUR.JPG"
 
     # Check existence of transformed files
     image_names = ['Original Image']
@@ -163,6 +175,9 @@ def plot_images(img_path: str, dst: str) -> None:
         image_names.append('Pseudolandmarks')
     if os.path.isfile(colors_path):
         img_colors, path, filename = pcv.readimage(colors_path)
+    if os.path.isfile(trueblur_path):
+        img_trueblur, path, filename = pcv.readimage(trueblur_path)
+        image_names.append('Trueblur')
 
     # Initialise plot
     length = len(image_names)
@@ -177,7 +192,7 @@ def plot_images(img_path: str, dst: str) -> None:
     plt.title('Original Image')
     plotted += 1
 
-    # Plot blurred image
+    # Plot blurred mask of image
     if img_blur is not None:
         plt.subplot(rows, cols, plotted)
         plt.imshow(img_blur)
@@ -212,6 +227,13 @@ def plot_images(img_path: str, dst: str) -> None:
         plt.title("Pseudolandmarks")
         plotted += 1
 
+    # Plot image's true blur (assignment's PDF blur was a blur of the mask)
+    if img_trueblur is not None:
+        plt.subplot(rows, cols, plotted)
+        plt.imshow(img_trueblur)
+        plt.title("True gaussian blur")
+        plotted += 1
+
     # Display 5 first transformations with original image
     plt.suptitle("Stored transformations of original image")
     plt.show()
@@ -234,7 +256,7 @@ def plot_images(img_path: str, dst: str) -> None:
 def main(file, src, dst, type) -> None:
     # Check if requested type is acceptable
     known_types = ['all', 'blur', 'mask', 'roi', 'analysis',
-                   'pseudolandmarks', 'colors']
+                   'pseudolandmarks', 'colors', 'trueblur']
     if type not in known_types:
         ctx = click.get_current_context()
         click.echo(ctx.get_help())

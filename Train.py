@@ -76,6 +76,5 @@ def main():
     model.save("model.keras")
 
 
-
 if __name__ == "__main__":
     main()
