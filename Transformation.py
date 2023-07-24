@@ -119,18 +119,18 @@ def transform_directory(src: str, dst: str, type: str) -> None:
         type (string): type of transformation requested
     """
     file_count = 0
-    directory_content = os.listdir(src)
-    for filename in directory_content:
+    dir_content = os.listdir(src)
+    for filename in dir_content:
         file_path = os.path.join(src, filename)
         if os.path.isfile(file_path) and (filetype.guess(file_path) is not None
            and filetype.guess(file_path).extension == 'jpg'):
             transform_image(img_path=file_path, dst=dst, type=type)
             file_count += 1
+            print(f"\rApplying {type} to {file_count}/{len(dir_content)}...",
+                  end='',
+                  flush=True)
         elif os.path.isdir(file_path):
             transform_directory(src=file_path, dst=dst, type=type)
-        print(f"\rApplying {type} to {file_count}/{len(directory_content)}...",
-              end='',
-              flush=True)
     if file_count > 0:
         print(f"\nApplied {type} to {file_count} JPG files in {src}")
 
