@@ -144,9 +144,10 @@ def plot_images(img_path: str, dst: str) -> None:
         dst (str): Destination where the transformations were stored
     """
     # Get the paths to each transformed image
-    img_prefix = dst + '/' + (img_path[2:len(img_path) - 4]
-                              if img_path[0:2] == "./"
-                              else img_path[0:len(img_path) - 4])
+    img_prefix = dst + '/'
+    if img_path[0:2] == "./":
+        img_path = img_path[2:]
+    img_prefix += img_path[img_path.find('/') + 1:-4]
     maskblur_path = img_prefix + "_MASKBLUR.JPG"
     mask_path = img_prefix + "_MASKED.JPG"
     roi_path = img_prefix + "_ROI_OBJECTS.JPG"
@@ -273,8 +274,12 @@ def main(file, src, dst, type, separate) -> None:
         if (filetype.guess(file) is None
            or filetype.guess(file).extension != 'jpg'):
             return print(f"{file} is not a jpeg image")
-        transform_image(file, dst='.', type=type)
-        plot_images(file, dst='.')
+        img_dir = file
+        if img_dir[0:2] == "./":
+            img_dir = img_dir[2:]
+        img_dir = img_dir[:img_dir.find('/')]
+        transform_image(file, dst=f"./{img_dir}_transformed", type=type)
+        plot_images(file, dst=f"./{img_dir}_transformed")
     # Directory transformation
     elif (src is not None and dst is not None):
         if os.path.isdir(src) is False:
@@ -287,11 +292,11 @@ def main(file, src, dst, type, separate) -> None:
                 known_types.remove('maskblur')
                 for single_type in known_types:
                     transform_directory(src=src,
-                                        dst=f"{dst}/{src}_{single_type}",
+                                        dst=f"{dst}/{src}/{single_type}",
                                         type=single_type)
             else:
                 transform_directory(src=src,
-                                    dst=f"{dst}/{src}_{type}",
+                                    dst=f"{dst}/{src}/{type}",
                                     type=type)
         else:
             transform_directory(src=src, dst=f"{dst}/{src}", type=type)
