@@ -35,9 +35,10 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
     pcv.params.debug_outdir = dst
     if not os.path.exists(dst):
         os.makedirs(dst)
-    new_image_prefix = dst + '/' + (img_path[2:len(img_path) - 4]
-                                    if img_path[0:2] == "./"
-                                    else img_path[0:len(img_path) - 4])
+    new_image_prefix = dst + '/'
+    if img_path[0:2] == "./":
+        img_path = img_path[2:]
+    new_image_prefix += img_path[img_path.find('/') + 1:-4]
     new_image_directory = os.path.split(new_image_prefix)[0]
     if not os.path.exists(new_image_directory):
         os.makedirs(new_image_directory)
@@ -252,8 +253,10 @@ def plot_images(img_path: str, dst: str) -> None:
               help="Type of transformation requested, choose between"
                    + " ['all', 'blur', 'mask', 'roi', 'analysis', "
                    + "'pseudolandmarks', 'colors', 'maskblur']")
+@click.option('--separate', default=True,
+              help="Separation of transformations in different directories")
 @click.argument('file', required=False)
-def main(file, src, dst, type) -> None:
+def main(file, src, dst, type, separate) -> None:
     # Check if requested type is acceptable
     known_types = ['all', 'blur', 'mask', 'roi', 'analysis',
                    'pseudolandmarks', 'colors', 'maskblur']
@@ -276,7 +279,22 @@ def main(file, src, dst, type) -> None:
     elif (src is not None and dst is not None):
         if os.path.isdir(src) is False:
             return print(f"{src} does not exist or is not a directory")
-        transform_directory(src=src, dst=dst, type=type)
+        if src[-1] == '/':
+            src = src[:-1]
+        if separate is True:
+            if type == 'all':
+                known_types.remove('all')
+                known_types.remove('maskblur')
+                for single_type in known_types:
+                    transform_directory(src=src,
+                                        dst=f"{dst}/{src}_{single_type}",
+                                        type=single_type)
+            else:
+                transform_directory(src=src,
+                                    dst=f"{dst}/{src}_{type}",
+                                    type=type)
+        else:
+            transform_directory(src=src, dst=f"{dst}/{src}", type=type)
     # Not enough arguments
     else:
         ctx = click.get_current_context()
