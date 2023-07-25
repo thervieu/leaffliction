@@ -1,9 +1,15 @@
 import os, sys
 import numpy as np
 
+import joblib
+
 import tensorflow as tf
 from tensorflow.keras import layers, models, callbacks
 from tensorflow.keras.utils import image_dataset_from_directory
+
+from Transformation import transform_gaussian_blur, transform_masked
+from Transformation import transform_roi, transform_analysis
+from Transformation import transform_pseudolandmarks
 
 
 def help():
@@ -29,10 +35,61 @@ def make_model(dataset):
 
     model.compile(
         optimizer="adam",
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), #
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
         metrics=["accuracy"],
     )
     return model
+
+
+def soft_vote(predictions):
+    # Stack the predictions along the first axis to form a 3D array (num_samples, num_models, num_classes)
+    stacked_predictions = np.stack(predictions, axis=1)
+
+    # Compute the average prediction for each sample and class (soft vote)
+    ensemble_prediction = np.mean(stacked_predictions, axis=1)
+
+    # Convert the ensemble predictions to class labels (index of the maximum probability)
+    ensemble_prediction = np.argmax(ensemble_prediction, axis=1)
+    
+    # print(ensemble_prediction)
+    return ensemble_prediction
+
+
+def hard_vote(predictions):
+    # print(predictions)
+    nb_classes = len(predictions[0][0])
+    # print(f'nb_classes = {nb_classes}')
+    # Stack the predictions along the first axis to form a 3D array (num_samples, num_models, num_classes)
+    stacked_predictions = np.stack(predictions, axis=1)
+
+    # Concatenate the innermost arrays along the last axis (num_samples, num_models * num_classes)
+    concatenated_predictions = stacked_predictions.reshape(stacked_predictions.shape[0], -1)
+    # print(stacked_predictions)
+    # print(concatenated_predictions)
+
+    # Compute the majority vote for each sample and class (hard vote)
+    ensemble_prediction = np.argmax(concatenated_predictions, axis=-1)
+    true_ensemble = []
+    for i in range(len(ensemble_prediction)):
+        true_ensemble.append(ensemble_prediction[i]%nb_classes)
+    return true_ensemble
+
+
+def print_accuracy(data, ensemble_prediction, mode="soft"):
+    # Get the ground truth labels from the test dataset
+    test_labels = np.concatenate([y for _, y in data], axis=0)
+    # Now 'ensemble_prediction' contains the final ensemble prediction for the test dataset.
+    # Each element of 'ensemble_prediction' will be an array of probabilities representing the ensemble's confidence
+    # for each class for the corresponding sample.
+
+    # Sum the equal values between ensemble and truth
+    correct_predictions = np.sum(ensemble_prediction == test_labels)
+
+    # Calculate the accuracy
+    accuracy = correct_predictions / len(test_labels)
+
+    print(f"Accuracy {mode} vote:", accuracy)
+    return
 
 
 def main():
@@ -42,39 +99,59 @@ def main():
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
     
-    #data preprocessing
-    data = image_dataset_from_directory(
-        sys.argv[1],
-        validation_split=0.2, # 0.7 for training, 0.1 for validation, 0.2 for testing
-        subset="both",
-        seed=42,
-        image_size=(128, 128), # takes 4 times less memory and time than (256,256)
-    )
-    train_data = data[0]
-    validation_data = data[1]
-    
-    # create model
-    model = make_model(train_data)
+    jl_name = f'Apples.joblib' if "Apple" in sys.argv[1] else f'Grapes.joblib'
+    jl_name = os.path.join(sys.argv[1] + jl_name)
 
-    # Create a learning rate scheduler callback.
-    reduce_lr = callbacks.ReduceLROnPlateau(
-        monitor="val_loss", factor=0.4, patience=5
-    )
-    # Create an early stopping callback.
-    early_stopping = callbacks.EarlyStopping(
-        monitor="val_loss", patience=5, restore_best_weights=True
-    )
+    data_acc = None
+    predictions_validation = []
+    subdirs = [elt for elt in os.listdir(sys.argv[1]) if "Apples" not in elt]
+    models = [0] * len(subdirs)
+    print(subdirs)
+    for i in range(len(subdirs)):
+        print(f'Training {subdirs[i]} model')
+        # data preprocessing
+        data = image_dataset_from_directory(
+            os.path.join(sys.argv[1], subdirs[i]),
+            validation_split=0.2, # 0.8 for training, 0.2 for validation
+            subset="both",
+            shuffle=True,
+            seed=42,
+            image_size=(128, 128), # takes 4 times less memory and time than (256,256)
+        )
+        train_data = data[0]
+        validation_data = data[1]
+        data_acc = data[1]
 
-    # fit model
-    history = model.fit(
-        train_data,
-        epochs=3,
-        validation_data=validation_data,
-        callbacks=[early_stopping, reduce_lr],
-    )
+        # create model
+        model = make_model(train_data)
 
-    model.save("model.keras")
+        # Create a learning rate scheduler callback.
+        reduce_lr = callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.4, patience=5
+        )
+        # Create an early stopping callback.
+        early_stopping = callbacks.EarlyStopping(
+            monitor="val_loss", patience=5, restore_best_weights=True
+        )
 
+        # fit model
+        model.fit(
+            train_data,
+            epochs=3,
+            validation_data=validation_data,
+            callbacks=[early_stopping, reduce_lr]
+        )
+
+        models[i] = model
+        predictions_validation.append(model.predict(validation_data))
+        print()
+
+    soft_vote_predictions = soft_vote(predictions_validation)
+    hard_vote_predictions = hard_vote(predictions_validation)
+    print_accuracy(data_acc, soft_vote_predictions, "soft")
+    print_accuracy(data_acc, hard_vote_predictions, "hard")
+
+    joblib.dump(models, jl_name)
 
 if __name__ == "__main__":
     main()
