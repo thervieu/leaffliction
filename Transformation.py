@@ -22,6 +22,95 @@ def find(pattern, path):
     return None
 
 
+def mask_image(img):
+    """
+    Generates the black and white mask necessary for many transformations
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the mask of the image
+    """
+    gray_img = pcv.rgb2gray_hsv(rgb_img=img, channel='s')
+    threshold = pcv.threshold.binary(gray_img=gray_img,
+                                    threshold=60,
+                                    max_value=255,
+                                    object_type='dark')
+    mask = pcv.invert(threshold)
+    mask = pcv.erode(gray_img=mask, ksize=3, i=1)
+    return mask
+
+
+def transform_gaussian_blur(img):
+    """
+    Generates a gaussian blur transformation of the image
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    return pcv.gaussian_blur(img, ksize=(11, 11))
+
+
+def transform_masked(img):
+    """
+    Generates a masked transformation of the image
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    mask = mask_image(img)
+    return pcv.apply_mask(img=img, mask=mask, mask_color='white')
+
+
+def transform_roi(img):
+    """
+    Finds ROI objects on the img and generates a representation of them
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    mask = mask_image(img)
+    objects, object_hierarchy = pcv.find_objects(img, mask)
+    contour, hierarchy = pcv.roi.rectangle(img, 0, 0,
+                                           img.shape[0],
+                                           img.shape[1])
+    pcv.params.debug = 'print'
+    pcv.roi_objects(img=img, roi_contour=contour, roi_hierarchy=hierarchy,
+                    object_contour=objects, obj_hierarchy=object_hierarchy,
+                    roi_type='partial')
+    pcv.params.debug = 'None'
+
+
+def transform_analysis(img):
+    """
+    Generates a representation of the analysis of the image
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    mask = mask_image(img)
+    objects, object_hierarchy = pcv.find_objects(img, mask)
+    obj, mask = pcv.object_composition(img=img,
+                                       contours=objects,
+                                       hierarchy=object_hierarchy)
+    return pcv.analyze_object(img, obj, mask)
+
+
+def transform_colors(img):
+    """
+    Generates a representation of the color channels of the image
+    Arguments:
+        img (np.ndarray): Array representing the image
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    mask = mask_image(img)
+    return pcv.analyze_color(rgb_img=img, mask=mask,
+                             colorspaces='all', label="default")
+
 def transform_image(img_path: str, dst: str, type: str) -> None:
     """
     Performs six image transformations on an image using PlantCV's functions
@@ -43,26 +132,21 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
     if not os.path.exists(new_image_directory):
         os.makedirs(new_image_directory)
 
-    # Generating the black and white mask necessary for many transformations
-    s = pcv.rgb2gray_hsv(rgb_img=img, channel='s')
-    s_thresh = pcv.threshold.binary(gray_img=s, threshold=60, max_value=255,
-                                    object_type='dark')
-    mask = pcv.invert(s_thresh)
-    mask = pcv.erode(gray_img=mask, ksize=3, i=1)
+    mask = mask_image(img)
 
-    # True gaussian blur of image
+    # Gaussian blur of image
     if type in ['blur', 'all']:
-        true_gaussian_blur = pcv.gaussian_blur(img, ksize=(11, 11))
-        pcv.print_image(true_gaussian_blur, new_image_prefix + "_PCVBLUR.JPG")
+        gaussian_blur = transform_gaussian_blur(img)
+        pcv.print_image(gaussian_blur, new_image_prefix + "_BLURRED.JPG")
 
     # Gaussian blur of mask
     if type in ['maskblur']:
-        gaussian_blur = pcv.gaussian_blur(mask, ksize=(3, 3))
-        pcv.print_image(gaussian_blur, new_image_prefix + "_MASKBLUR.JPG")
+        mask_blur = transform_gaussian_blur(mask)
+        pcv.print_image(mask_blur, new_image_prefix + "_MASKBLUR.JPG")
 
     # Masked image
     if type in ['mask', 'all']:
-        masked = pcv.apply_mask(img=img, mask=mask, mask_color='white')
+        masked = transform_masked(img)
         pcv.print_image(masked, new_image_prefix + "_MASKED.JPG")
 
     # Common part for next transformations
@@ -90,7 +174,7 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
 
     # Analyse objects
     if type in ['analysis', 'all']:
-        analyse_img = pcv.analyze_object(img, obj, mask)
+        analyse_img = transform_analysis(img)
         pcv.print_image(analyse_img, new_image_prefix + "_ANALYZED.JPG")
 
     # Pseudolandmarks
@@ -103,9 +187,8 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
         pcv.params.debug = 'None'
 
     # Analyse colors channels
-    if type in ['colors', 'all']:
-        color_channels = pcv.analyze_color(rgb_img=img, mask=mask,
-                                           colorspaces='all', label="default")
+    if type in ['colors']:
+        color_channels = transform_colors(img)
         pcv.print_image(color_channels, new_image_prefix + "_COLORS.JPG")
 
 
@@ -154,7 +237,7 @@ def plot_images(img_path: str, dst: str) -> None:
     analysis_path = img_prefix + "_ANALYZED.JPG"
     landmark_path = img_prefix + "_PSEUDOLANDMARKS.JPG"
     colors_path = img_prefix + "_COLORS.JPG"
-    blur_path = img_prefix + "_PCVBLUR.JPG"
+    blur_path = img_prefix + "_BLURRED.JPG"
 
     # Check existence of transformed files
     image_names = ['Original Image']
