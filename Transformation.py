@@ -387,6 +387,8 @@ def main(file, src, dst, type, separate) -> None:
                     transform_directory(src=src,
                                         dst=f"{dst}/{src}/{single_type}",
                                         type=single_type)
+                    print(f"Finished applying {single_type}! Resulting images"
+                          + f" can be found at {dst}/{src}/{single_type}\n")
             else:
                 transform_directory(src=src,
                                     dst=f"{dst}/{src}/{type}",
