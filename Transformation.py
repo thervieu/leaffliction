@@ -32,9 +32,9 @@ def mask_image(img):
     """
     gray_img = pcv.rgb2gray_hsv(rgb_img=img, channel='s')
     threshold = pcv.threshold.binary(gray_img=gray_img,
-                                    threshold=60,
-                                    max_value=255,
-                                    object_type='dark')
+                                     threshold=60,
+                                     max_value=255,
+                                     object_type='dark')
     mask = pcv.invert(threshold)
     mask = pcv.erode(gray_img=mask, ksize=3, i=1)
     return mask
@@ -63,14 +63,16 @@ def transform_masked(img):
     return pcv.apply_mask(img=img, mask=mask, mask_color='white')
 
 
-def transform_roi(img):
+def transform_roi(img, dst='.'):
     """
     Finds ROI objects on the img and generates a representation of them
     Arguments:
         img (np.ndarray): Array representing the image
+        dst (str): Destination directory for the temporary files
     Returns:
         A np.ndarray representing the transformed image
     """
+    pcv.params.debug_outdir = dst
     mask = mask_image(img)
     objects, object_hierarchy = pcv.find_objects(img, mask)
     contour, hierarchy = pcv.roi.rectangle(img, 0, 0,
@@ -81,6 +83,12 @@ def transform_roi(img):
                     object_contour=objects, obj_hierarchy=object_hierarchy,
                     roi_type='partial')
     pcv.params.debug = 'None'
+    roi_file = find("*_obj_on_img.png", dst)
+    trash_file = find("*_roi_mask.png", dst)
+    transformed_img, path, filename = pcv.readimage(roi_file)
+    os.remove(trash_file)
+    os.remove(roi_file)
+    return transformed_img
 
 
 def transform_analysis(img):
@@ -99,6 +107,30 @@ def transform_analysis(img):
     return pcv.analyze_object(img, obj, mask)
 
 
+def transform_pseudolandmarks(img, dst='.'):
+    """
+    Finds pseudolandmarks on the img and generates a representation of them
+    Arguments:
+        img (np.ndarray): Array representing the image
+        dst (str): Destination directory for the temporary files
+    Returns:
+        A np.ndarray representing the transformed image
+    """
+    pcv.params.debug_outdir = dst
+    mask = mask_image(img)
+    objects, object_hierarchy = pcv.find_objects(img, mask)
+    obj, mask = pcv.object_composition(img=img,
+                                       contours=objects,
+                                       hierarchy=object_hierarchy)
+    pcv.params.debug = 'print'
+    pcv.y_axis_pseudolandmarks(img=img, obj=obj, mask=mask, label="default")
+    pcv.params.debug = 'None'
+    pseudolandmarks_file = find("*_pseudolandmarks.png", dst)
+    transformed_img, path, filename = pcv.readimage(pseudolandmarks_file)
+    os.remove(pseudolandmarks_file)
+    return transformed_img
+
+
 def transform_colors(img):
     """
     Generates a representation of the color channels of the image
@@ -111,6 +143,7 @@ def transform_colors(img):
     return pcv.analyze_color(rgb_img=img, mask=mask,
                              colorspaces='all', label="default")
 
+
 def transform_image(img_path: str, dst: str, type: str) -> None:
     """
     Performs six image transformations on an image using PlantCV's functions
@@ -122,8 +155,6 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
     # Initialisation
     img, path, filename = pcv.readimage(img_path)
     pcv.params.debug_outdir = dst
-    if not os.path.exists(dst):
-        os.makedirs(dst)
     new_image_prefix = dst + '/'
     if img_path[0:2] == "./":
         img_path = img_path[2:]
@@ -149,28 +180,10 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
         masked = transform_masked(img)
         pcv.print_image(masked, new_image_prefix + "_MASKED.JPG")
 
-    # Common part for next transformations
-    if type in ['roi', 'all', 'analysis', 'pseudolandmarks']:
-        objects, object_hierarchy = pcv.find_objects(img, mask)
-
     # ROI objects
     if type in ['roi', 'all']:
-        contour, hierarchy = pcv.roi.rectangle(img, 0, 0, img.shape[0],
-                                               img.shape[1])
-        pcv.params.debug = 'print'
-        pcv.roi_objects(img=img, roi_contour=contour, roi_hierarchy=hierarchy,
-                        object_contour=objects, obj_hierarchy=object_hierarchy,
-                        roi_type='partial')
-        generated_file = find("*_obj_on_img.png", dst)
-        os.rename(generated_file, new_image_prefix + "_ROI_OBJECTS.JPG")
-        remove_trash_file = find("*_roi_mask.png", dst)
-        os.remove(remove_trash_file)
-        pcv.params.debug = 'None'
-
-    # Common part for next transformations
-    if type in ['analysis', 'all', 'pseudolandmarks']:
-        obj, mask = pcv.object_composition(img=img, contours=objects,
-                                           hierarchy=object_hierarchy)
+        roi_img = transform_roi(img, dst=dst)
+        pcv.print_image(roi_img, new_image_prefix + "_ROI_OBJECTS.JPG")
 
     # Analyse objects
     if type in ['analysis', 'all']:
@@ -179,12 +192,8 @@ def transform_image(img_path: str, dst: str, type: str) -> None:
 
     # Pseudolandmarks
     if type in ['pseudolandmarks', 'all']:
-        pcv.params.debug = 'print'
-        pcv.y_axis_pseudolandmarks(img=img, obj=obj, mask=mask,
-                                   label="default")
-        generated_file = find("*_pseudolandmarks.png", dst)
-        os.rename(generated_file, new_image_prefix + "_PSEUDOLANDMARKS.JPG")
-        pcv.params.debug = 'None'
+        pseudo_img = transform_pseudolandmarks(img, dst=dst)
+        pcv.print_image(pseudo_img, new_image_prefix + "_PSEUDOLANDMARKS.JPG")
 
     # Analyse colors channels
     if type in ['colors']:
@@ -316,10 +325,10 @@ def plot_images(img_path: str, dst: str) -> None:
     if img_blur is not None:
         plt.subplot(rows, cols, plotted)
         plt.imshow(img_blur)
-        plt.title("True gaussian blur")
+        plt.title("Gaussian blur")
         plotted += 1
 
-    # Display 5 first transformations with original image
+    # Display previous transformations along with original image on same plot
     plt.suptitle("Stored transformations of original image")
     plt.show()
 
@@ -373,6 +382,7 @@ def main(file, src, dst, type, separate) -> None:
             if type == 'all':
                 known_types.remove('all')
                 known_types.remove('maskblur')
+                known_types.remove('colors')
                 for single_type in known_types:
                     transform_directory(src=src,
                                         dst=f"{dst}/{src}/{single_type}",
