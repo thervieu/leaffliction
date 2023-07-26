@@ -1,8 +1,10 @@
-import os, sys, joblib
+import os
+import sys
+import joblib
 from Train import soft_vote, hard_vote, print_accuracy
 
-import tensorflow as tf
 from tensorflow.keras.utils import image_dataset_from_directory
+
 
 def main():
     # argument
@@ -15,7 +17,8 @@ def main():
     jl_name = os.path.join(sys.argv[1] + '.joblib')
     data_acc = None
     predictions_validation = []
-    subdirs = sorted([elt for elt in os.listdir(sys.argv[1]) if fruit not in elt])
+    subdirs = [elt for elt in os.listdir(sys.argv[1]) if fruit not in elt]
+    subdirs = sorted(subdirs)
     models = joblib.load(filename=jl_name)
     for (model, subdir) in zip(models, subdirs):
         print(f'evaluating {subdir} model')
@@ -28,7 +31,6 @@ def main():
             seed=42,
             image_size=(128, 128),   # 4x less memory and time than (256,256)
         )
-        train_data = data[0]
         validation_data = data[1]
         data_acc = data[1]
 
