@@ -27,7 +27,7 @@ def plot_images(img, f, r, c, b, s, p):
     plt.figure(figsize=(8, 6))
 
     # Plot original image
-    plt.subplot(3, 4, 1)
+    plt.subplot(3, 3, 1)
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     plt.title('Original')
 

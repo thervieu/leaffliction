@@ -2,19 +2,78 @@ import os
 import sys
 import filetype
 import numpy as np
+<<<<<<< HEAD
+=======
+import matplotlib.pyplot as plt
+
+>>>>>>> 2240ee4 (work on sorted directories in p4, plot images in predict, fix in augment)
 import joblib
 
 from plantcv import plantcv as pcv
 
 from keras.preprocessing import image
+from PIL import Image
 
 from Transformation import transform_gaussian_blur, transform_masked
 from Transformation import transform_roi, transform_analysis
-from Transformation import transform_pseudolandmarks
+from Transformation import transform_pseudolandmarks, find
 
 
 def help():
     print("usage: python3 Predict.py [image_path]")
+
+
+def plot_images(path, fruit, class_pred):
+    # Open the images
+    image = Image.open(path)
+    b = Image.open(f"{fruit}_BLURRED.JPG")
+    m = Image.open(f"{fruit}_MASKED.JPG")
+    p = Image.open(f"{fruit}_PSEUDOLANDMARKS.JPG")
+    r = Image.open(f"{fruit}_ROI_OBJECTS.JPG")
+    a = Image.open(f"{fruit}_ANALYZED.JPG")
+    
+    plt.figure(figsize=(8, 6))
+
+    plt.subplot(3, 2, 1)
+    plt.imshow(image)
+    plt.title('Original')
+
+    plt.subplot(3, 2, 2)
+    plt.imshow(b)
+    plt.title('Gaussian Blur')
+
+    plt.subplot(3, 2, 3)
+    plt.imshow(m)
+    plt.title('Mask')
+
+    plt.subplot(3, 2, 4)
+    plt.imshow(p)
+    plt.title('Pseudolandmark')
+
+    plt.subplot(3, 2, 5)
+    plt.imshow(r)
+    plt.title('ROI objects')
+
+    plt.subplot(3, 2, 6)
+    plt.imshow(a)
+    plt.title('Analysis')
+
+    # set the spacing between subplots
+    plt.subplots_adjust(left=0.1,
+                        bottom=0.1,
+                        right=0.9,
+                        top=0.9,
+                        wspace=0.4,
+                        hspace=0.6)
+
+    # center text
+    fig = plt.gcf()
+    fontsize=14
+    text_width = len(class_pred) * 0.1
+    text_x = 0.5 - text_width / (2 * fig.get_figwidth())
+    plt.text(text_x, 0.5, class_pred, fontsize=fontsize, transform=fig.transFigure)
+    
+    plt.show()
 
 
 def make_images(path, fruit):
@@ -94,9 +153,11 @@ def soft_vote(predictions):
 
     # Convert ensemble predictions to class labels
     # (index of the maximum probability)
-    ensemble_prediction = np.argmax(ensemble_prediction)
+    max_index = np.argmax(ensemble_prediction)
+    
+    print(f'soft vote prediction percentage : {ensemble_prediction[max_index]}')
 
-    return ensemble_prediction
+    return max_index
 
 
 def hard_vote(predictions):
@@ -109,7 +170,7 @@ def hard_vote(predictions):
 
     p_arr = [pred for i in range(len(predictions)) for pred in predictions[i]]
 
-    pred = np.argmax(p_arr) % nb_classes
+    print(f'hard vote prediction percentage : {pred_array[np.argmax(pred_array)]}')
 
     return pred
 
@@ -123,29 +184,34 @@ def main():
     if (filetype.guess(sys.argv[1]) is None
        or filetype.guess(sys.argv[1]).extension != 'jpg'):
         return print(f"{sys.argv[1]} is not a jpeg image")
-
+ 
     if "Apples" in sys.argv[1]:
-        jl_name = "Apples/Apples.joblib"
+        jl_name = "Apples.joblib"
     else:
-        jl_name = "Grapes/Grapes.joblib"
-    models = joblib.load(filename="images_all/"+jl_name)
+        jl_name = "Grapes.joblib"
+    path = find(jl_name, ".")
+    if path is None:
+        return print(f'{jl_name} model not trained')
+    models = joblib.load(filename=path)
 
-    fruit = "Apple" if "Apples" in sys.argv[1] else "Grape"
+    fruit = "Apples" if "Apples" in sys.argv[1] else "Grapes"
     make_images(sys.argv[1], fruit)
 
     predictions = []
-    transformations = ['blur', 'pseudolandmarks', 'mask', 'roi', 'analysis']
+    transformations = sorted(os.listdir(os.path.dirname(path)+f'/{fruit}'))
     for i in range(len(models)):
         prediction = models[i].predict(load_image(transformations[i], fruit))
         predictions.append(prediction[0])
-
-    remove_images(fruit)
 
     s_vote = soft_vote(predictions)
     h_vote = hard_vote(predictions)
     classes = sorted(os.listdir(os.path.dirname(os.path.dirname(sys.argv[1]))))
     print(f'soft voting predicted : {classes[s_vote]}')
     print(f'hard voting predicted : {classes[h_vote]}')
+
+    plot_images(sys.argv[1], fruit, classes[s_vote] if s_vote > h_vote else classes[h_vote])
+    
+    remove_images(fruit)
 
 
 if __name__ == "__main__":

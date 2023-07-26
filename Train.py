@@ -99,14 +99,12 @@ def main():
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
 
-    jl_name = 'Apples.joblib' if "Apple" in sys.argv[1] else 'Grapes.joblib'
-    jl_name = os.path.join(sys.argv[1] + jl_name)
-
+    fruit = f'Apples' if "Apple" in sys.argv[1] else f'Grapes'
+    jl_name = os.path.join(sys.argv[1] + '.joblib')
     data_acc = None
     predictions_validation = []
-    subdirs = [elt for elt in os.listdir(sys.argv[1]) if "Apples" not in elt]
+    subdirs = sorted([elt for elt in os.listdir(sys.argv[1]) if fruit not in elt])
     models = [0] * len(subdirs)
-    print(subdirs)
     for i in range(len(subdirs)):
         print(f'Training {subdirs[i]} model')
         # data preprocessing
