@@ -26,12 +26,13 @@ def main():
     for key in count_dict:
         print('Augmenting', key)
         augment_number = int((max_count - count_dict[key]) / 7)
-        print('Augmenting {} images'.format(augment_number))
         images = os.listdir(os.path.join(sys.argv[1], key))
-        for _ in range(augment_number):
+        for i in range(augment_number):
+            print(f'\rAugmented {i+1}/{augment_number} images', end='')
             cur_img = random.choice(images)
             augment(os.path.join(sys.argv[1], key, cur_img), plot=False)
             images.remove(cur_img)
+        print()
         print()
     print('All subdirectories augmented')
 

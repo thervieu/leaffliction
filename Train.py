@@ -99,7 +99,7 @@ def main():
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
 
-    fruit = f'Apples' if "Apple" in sys.argv[1] else f'Grapes'
+    fruit = sys.argv[1].split('/', 1)[1]
     jl_name = os.path.join(sys.argv[1] + '.joblib')
     data_acc = None
     predictions_validation = []

@@ -2,11 +2,8 @@ import os
 import sys
 import filetype
 import numpy as np
-<<<<<<< HEAD
-=======
-import matplotlib.pyplot as plt
 
->>>>>>> 2240ee4 (work on sorted directories in p4, plot images in predict, fix in augment)
+import matplotlib.pyplot as plt
 import joblib
 
 from plantcv import plantcv as pcv
@@ -168,11 +165,11 @@ def hard_vote(predictions):
     """
     nb_classes = len(predictions[0])
 
-    p_arr = [pred for i in range(len(predictions)) for pred in predictions[i]]
+    pred_array = [pred for i in range(len(predictions)) for pred in predictions[i]]
 
     print(f'hard vote prediction percentage : {pred_array[np.argmax(pred_array)]}')
 
-    return pred
+    return np.argmax(pred_array) % nb_classes
 
 
 def main():
@@ -185,16 +182,13 @@ def main():
        or filetype.guess(sys.argv[1]).extension != 'jpg'):
         return print(f"{sys.argv[1]} is not a jpeg image")
  
-    if "Apples" in sys.argv[1]:
-        jl_name = "Apples.joblib"
-    else:
-        jl_name = "Grapes.joblib"
+    jl_name = sys.argv[1].split("/", 1)[0] + '.joblib'
     path = find(jl_name, ".")
     if path is None:
         return print(f'{jl_name} model not trained')
     models = joblib.load(filename=path)
 
-    fruit = "Apples" if "Apples" in sys.argv[1] else "Grapes"
+    fruit = sys.argv[1].split("/", 1)[0]
     make_images(sys.argv[1], fruit)
 
     predictions = []
