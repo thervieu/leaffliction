@@ -28,7 +28,7 @@ def plot_images(path, fruit, class_pred):
     p = Image.open(f"{fruit}_PSEUDOLANDMARKS.JPG")
     r = Image.open(f"{fruit}_ROI_OBJECTS.JPG")
     a = Image.open(f"{fruit}_ANALYZED.JPG")
-    
+
     plt.figure(figsize=(8, 6))
 
     plt.subplot(3, 2, 1)
@@ -65,11 +65,15 @@ def plot_images(path, fruit, class_pred):
 
     # center text
     fig = plt.gcf()
-    fontsize=14
+    fontsize = 14
     text_width = len(class_pred) * 0.1
     text_x = 0.5 - text_width / (2 * fig.get_figwidth())
-    plt.text(text_x, 0.5, class_pred, fontsize=fontsize, transform=fig.transFigure)
-    
+    plt.text(text_x,
+             0.5,
+             class_pred,
+             fontsize=fontsize,
+             transform=fig.transFigure)
+
     plt.show()
 
 
@@ -151,23 +155,23 @@ def soft_vote(predictions):
     # Convert ensemble predictions to class labels
     # (index of the maximum probability)
     max_index = np.argmax(ensemble_prediction)
-    
-    print(f'soft vote prediction percentage : {ensemble_prediction[max_index]}')
+
+    print(f'soft vote prediction percentage: {ensemble_prediction[max_index]}')
 
     return max_index
 
 
-def hard_vote(predictions):
+def hard_vote(preds):
     """
     Computes the majority vote for each sample and class (hard vote)
     Arguments:
-        predictions (np.ndarray): the predictions array
+        preds (np.ndarray): the predictions array
     """
-    nb_classes = len(predictions[0])
+    nb_classes = len(preds[0])
 
-    pred_array = [pred for i in range(len(predictions)) for pred in predictions[i]]
+    pred_array = [pred for i in range(len(preds)) for pred in preds[i]]
 
-    print(f'hard vote prediction percentage : {pred_array[np.argmax(pred_array)]}')
+    print(f'hard vote pred. percentage : {pred_array[np.argmax(pred_array)]}')
 
     return np.argmax(pred_array) % nb_classes
 
@@ -181,7 +185,7 @@ def main():
     if (filetype.guess(sys.argv[1]) is None
        or filetype.guess(sys.argv[1]).extension != 'jpg'):
         return print(f"{sys.argv[1]} is not a jpeg image")
- 
+
     jl_name = sys.argv[1].split("/", 1)[0] + '.joblib'
     path = find(jl_name, ".")
     if path is None:
@@ -203,8 +207,10 @@ def main():
     print(f'soft voting predicted : {classes[s_vote]}')
     print(f'hard voting predicted : {classes[h_vote]}')
 
-    plot_images(sys.argv[1], fruit, classes[s_vote] if s_vote > h_vote else classes[h_vote])
-    
+    plot_images(sys.argv[1],
+                fruit,
+                classes[s_vote] if s_vote > h_vote else classes[h_vote])
+
     remove_images(fruit)
 
 

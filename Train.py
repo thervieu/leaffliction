@@ -103,7 +103,8 @@ def main():
     jl_name = os.path.join(sys.argv[1] + '.joblib')
     data_acc = None
     predictions_validation = []
-    subdirs = sorted([elt for elt in os.listdir(sys.argv[1]) if fruit not in elt])
+    subdirs = [elt for elt in os.listdir(sys.argv[1]) if fruit not in elt]
+    subdirs = sorted(subdirs)
     models = [0] * len(subdirs)
     for i in range(len(subdirs)):
         print(f'Training {subdirs[i]} model')
