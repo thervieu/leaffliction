@@ -10,28 +10,46 @@ class CountDict(TypedDict):
 
 
 def help() -> None:
+    """
+    Displays usage of this program
+    """
     print("help:\n\tDescription.py [Directory]")
 
 
 def getCountDictionary(directory: str) -> CountDict:
-    # dictionnary with subdir as keys and
-    # number of photos in each subdir as values
+    """
+    Creates a dictionary with the sub-directories as keys and the number of
+    images in each sub-directory as values.
+    Arguments:
+        directory (str): parent directory
+    Returns:
+        A CountDict representing the number of images in each sub-directory
+    """
     count_dict: CountDict = CountDict()
     for subdir in os.listdir(directory):
-        if os.path.isdir(os.path.join(directory,subdir)) is False:
-            return print("{} is not a directory".format(os.path.join(directory,subdir)))
-        count_dict[subdir] = len(os.listdir(os.path.join(directory,subdir)))
+        if os.path.isdir(os.path.join(directory, subdir)) is False:
+            return print(f"{os.path.join(directory, subdir)} not a directory")
+        count_dict[subdir] = len(os.listdir(os.path.join(directory, subdir)))
     return count_dict
 
-def getNameValue(leaf:str) :
+
+def getNameValue(leaf: str):
+    """
+    Gets the image count of each sub-directory and plots them all
+    Arguments:
+        leaf (str): parent directory
+    """
     count_dict = getCountDictionary(leaf)
     names = list(count_dict.keys())
     values = list(count_dict.values())
-    plt.bar(range(len(count_dict)), values, tick_label=names, color=['blue', 'orange', 'green', 'red'])
+    plt.bar(range(len(count_dict)),
+            values,
+            tick_label=names,
+            color=['blue', 'orange', 'green', 'red'])
     plt.figure()
     plt.pie(values, labels=names)
     plt.show()
-    
+
 
 def main() -> None:
     # argument
@@ -41,6 +59,7 @@ def main() -> None:
         return print("Argument {} is not a directory".format(sys.argv[1]))
     leafName = os.path.join(sys.argv[1], '')
     getNameValue(leafName)
+
 
 if __name__ == "__main__":
     main()
