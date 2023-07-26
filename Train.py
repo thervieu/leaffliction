@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import numpy as np
 
 import joblib
@@ -7,13 +8,9 @@ import tensorflow as tf
 from tensorflow.keras import layers, models, callbacks
 from tensorflow.keras.utils import image_dataset_from_directory
 
-from Transformation import transform_gaussian_blur, transform_masked
-from Transformation import transform_roi, transform_analysis
-from Transformation import transform_pseudolandmarks
-
 
 def help():
-    print(f'usage: python3 Train.py [folder of images]')
+    print("usage: python3 Train.py [folder of images]")
 
 
 def make_model(dataset):
@@ -42,16 +39,17 @@ def make_model(dataset):
 
 
 def soft_vote(predictions):
-    # Stack the predictions along the first axis to form a 3D array (num_samples, num_models, num_classes)
+    # Stack the predictions along the first axis to form a 3D array
+    # (num_samples, num_models, num_classes)
     stacked_predictions = np.stack(predictions, axis=1)
 
     # Compute the average prediction for each sample and class (soft vote)
     ensemble_prediction = np.mean(stacked_predictions, axis=1)
 
-    # Convert the ensemble predictions to class labels (index of the maximum probability)
+    # Convert the ensemble predictions to class labels
+    # (index of the maximum probability)
     ensemble_prediction = np.argmax(ensemble_prediction, axis=1)
-    
-    # print(ensemble_prediction)
+
     return ensemble_prediction
 
 
@@ -59,28 +57,30 @@ def hard_vote(predictions):
     # print(predictions)
     nb_classes = len(predictions[0][0])
     # print(f'nb_classes = {nb_classes}')
-    # Stack the predictions along the first axis to form a 3D array (num_samples, num_models, num_classes)
-    stacked_predictions = np.stack(predictions, axis=1)
+    # Stack the predictions along the first axis to form a 3D array
+    # (num_samples, num_models, num_classes)
+    stacked_pred = np.stack(predictions, axis=1)
 
-    # Concatenate the innermost arrays along the last axis (num_samples, num_models * num_classes)
-    concatenated_predictions = stacked_predictions.reshape(stacked_predictions.shape[0], -1)
-    # print(stacked_predictions)
-    # print(concatenated_predictions)
+    # Concatenate the innermost arrays along the last axis
+    # (num_samples, num_models * num_classes)
+    concatenated_pred = stacked_pred.reshape(stacked_pred.shape[0], -1)
 
     # Compute the majority vote for each sample and class (hard vote)
-    ensemble_prediction = np.argmax(concatenated_predictions, axis=-1)
+    ensemble_prediction = np.argmax(concatenated_pred, axis=-1)
     true_ensemble = []
     for i in range(len(ensemble_prediction)):
-        true_ensemble.append(ensemble_prediction[i]%nb_classes)
+        true_ensemble.append(ensemble_prediction[i] % nb_classes)
     return true_ensemble
 
 
 def print_accuracy(data, ensemble_prediction, mode="soft"):
     # Get the ground truth labels from the test dataset
     test_labels = np.concatenate([y for _, y in data], axis=0)
-    # Now 'ensemble_prediction' contains the final ensemble prediction for the test dataset.
-    # Each element of 'ensemble_prediction' will be an array of probabilities representing the ensemble's confidence
-    # for each class for the corresponding sample.
+    # Now 'ensemble_prediction' contains the final ensemble prediction
+    # for the test dataset.
+    # Each element of 'ensemble_prediction' will be an array of probabilities
+    # representing the ensemble's confidence for each class for
+    # the corresponding sample.
 
     # Sum the equal values between ensemble and truth
     correct_predictions = np.sum(ensemble_prediction == test_labels)
@@ -98,8 +98,8 @@ def main():
         return help()
     if os.path.isdir(sys.argv[1]) is False:
         return print("Argument {} is not a directory".format(sys.argv[1]))
-    
-    jl_name = f'Apples.joblib' if "Apple" in sys.argv[1] else f'Grapes.joblib'
+
+    jl_name = 'Apples.joblib' if "Apple" in sys.argv[1] else 'Grapes.joblib'
     jl_name = os.path.join(sys.argv[1] + jl_name)
 
     data_acc = None
@@ -112,11 +112,11 @@ def main():
         # data preprocessing
         data = image_dataset_from_directory(
             os.path.join(sys.argv[1], subdirs[i]),
-            validation_split=0.2, # 0.8 for training, 0.2 for validation
+            validation_split=0.2,    # 0.8 for training, 0.2 for validation
             subset="both",
             shuffle=True,
             seed=42,
-            image_size=(128, 128), # takes 4 times less memory and time than (256,256)
+            image_size=(128, 128),   # 4x less memory and time than (256,256)
         )
         train_data = data[0]
         validation_data = data[1]
@@ -152,6 +152,7 @@ def main():
     print_accuracy(data_acc, hard_vote_predictions, "hard")
 
     joblib.dump(models, jl_name)
+
 
 if __name__ == "__main__":
     main()
