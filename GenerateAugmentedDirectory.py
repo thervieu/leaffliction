@@ -1,4 +1,6 @@
-import os, sys, random
+import os
+import sys
+import random
 from datetime import datetime
 
 from Augmentation import augment
@@ -6,7 +8,7 @@ from Distribution import getCountDictionary
 
 
 def help() -> None:
-    print("help:\n\GenerateAugmentedDirectory.py [directory]")
+    print("help:\n\tGenerateAugmentedDirectory.py [directory]")
 
 
 def main():
