@@ -5,70 +5,116 @@ from skimage import transform as tf
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
+from PIL import Image, ImageEnhance
+
+import filetype
 
 
 
 def help() -> None:
     print("help:\n\tAugmentation.py [path_to_img]")
 
-def plotImage(img, img_change, title) :
+def plot_images(img, f, r, c, b, s, p) :
+    # set the size of plot
+    plt.figure(figsize=(8,6))
 
     # Plot original image
-    plt.subplot(1, 2, 1)
+    plt.subplot(3, 4, 1)
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    plt.title('Original Image')
+    plt.title('Original')
 
     # Plot flipped image
-    plt.subplot(1, 2, 2)
-    plt.imshow(cv2.cvtColor(img_change, cv2.COLOR_BGR2RGB))
-    plt.title(title)
+    plt.subplot(3, 3, 2)
+    plt.imshow(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
+    plt.title("Flip")
+
+    # Plot rotated image
+    plt.subplot(3, 3, 3)
+    plt.imshow(cv2.cvtColor(r, cv2.COLOR_BGR2RGB))
+    plt.title("Rotation")
+
+    # Plot rotated image
+    plt.subplot(3, 3, 4)
+    plt.imshow(c)
+    plt.title("Contrast")
+    
+    # Plot rotated image
+    plt.subplot(3, 3, 5)
+    plt.imshow(b)
+    plt.title("Brightness")
+
+    # Plot rotated image
+    plt.subplot(3, 3, 6)
+    plt.imshow(cv2.cvtColor(s, cv2.COLOR_BGR2RGB))
+    plt.title("Shear")
+    # Plot rotated image
+    plt.subplot(3, 3, 7)
+    plt.imshow(cv2.cvtColor(p, cv2.COLOR_BGR2RGB))
+    plt.title("Projection")
+
+    # set the spacing between subplots
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.4,
+                    hspace=0.6)
 
     # Display the plot
     plt.show()
 
 
-# FLIP
-
-def flip(img_path, img, plot) :
+def flip(img_path, img):
 
     flipped_img = cv2.flip(img, 1)
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Flip.JPG", flipped_img)
 
-    if plot:
-        #plot
-        plotImage(img, flipped_img, 'Flipped Image')
+    return flipped_img
 
-def rotate(img_path, img, plot) :
+
+def rotate(img_path, img):
 
     #rotate
     rotated_img = imutils.rotate_bound(img, random.choice([-30, -20, -10, 10, 20, 30]))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Rotate.JPG", rotated_img)
 
-    if plot:
-        #plot
-        plotImage(img, rotated_img, 'Rotated Image')
+    return rotated_img
 
-def contrast(img_path, img, plot) :
 
-    # contrast
-    inc_contrast_img = cv2.convertScaleAbs(img, alpha=random.choice([1.1, 1.2, 1.3]), beta=1)
-    cv2.imwrite(img_path[0:len(img_path) - 4]+"_Contrast.JPG", inc_contrast_img)
+def contrast(img_path, img):
+    # Open the image
+    image = Image.open(img_path)
 
-    if plot:
-        #plot
-        plotImage(img, inc_contrast_img, 'Darkest Image')
+    # Create an enhancer object for brightness
+    enhancer = ImageEnhance.Contrast(image)
 
-def brightness(img_path, img, plot) :
+    contrast_factor = 1.5
+    # Adjust the brightness
+    enhanced_image = enhancer.enhance(contrast_factor)
 
-    # brightness
-    inc_brightness_img = cv2.convertScaleAbs(img, alpha=1, beta=random.choice([3, 5, 7]))
-    cv2.imwrite(img_path[0:len(img_path) - 4]+"_Brightness.JPG", inc_brightness_img)
+    # Save the modified image
+    enhanced_image.save(img_path[0:len(img_path) - 4]+"_Contrast.JPG")
 
-    if plot:
-        #plot
-        plotImage(img, inc_brightness_img, 'Brightness Image')
+    return enhanced_image
 
-def shear(img_path, img, plot) :
+
+def brightness(img_path, img):
+    # Open the image
+    image = Image.open(img_path)
+
+    # Create an enhancer object for brightness
+    enhancer = ImageEnhance.Brightness(image)
+
+    brightness_factor = 1.3
+    # Adjust the brightness
+    enhanced_image = enhancer.enhance(brightness_factor)
+
+    # Save the modified image
+    enhanced_image.save(img_path[0:len(img_path) - 4]+"_Contrast.JPG")
+
+    return enhanced_image
+
+def shear(img_path, img):
 
     # shear
     num_rows, num_cols = img.shape[:2]
@@ -78,11 +124,10 @@ def shear(img_path, img, plot) :
     img_shear = cv2.warpAffine(img, matrix, (num_cols,num_rows))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Shear.JPG", img_shear)
 
-    if plot:
-        #plot
-        plotImage(img, img_shear, 'Shear Image')
+    return img_shear
 
-def projection(img_path, img, plot) :
+
+def projection(img_path, img):
 
     # project
     num_rows, num_cols = img.shape[:2]
@@ -92,31 +137,22 @@ def projection(img_path, img, plot) :
     img_projection = cv2.warpPerspective(img, projective_matrix, (num_cols,num_rows))
     cv2.imwrite(img_path[0:len(img_path) - 4]+"_Projection.JPG", img_projection)
 
-    if plot:
-        #plot
-        plotImage(img, img_projection, 'Projection Image')
+    return img_projection
+
 
 def augment(img_path: str, plot=True) -> None:
-    # img transformations with openCV
+    # img transformations with openCV and Pillow
     img = cv2.imread(img_path)
 
-    #flip
-    flip(img_path, img, plot)
+    f = flip(img_path, img)
+    r = rotate(img_path, img)
+    c = contrast(img_path, img)
+    b = brightness(img_path, img)
+    s = shear(img_path, img)
+    p = projection(img_path, img)
 
-    #rotate
-    rotate(img_path, img, plot)
-
-    # contrast
-    contrast(img_path, img, plot)
-
-    # brightness
-    brightness(img_path, img, plot)
-
-    # shear
-    shear(img_path, img, plot)
-
-    # project
-    projection(img_path, img, plot)
+    if plot:
+        plot_images(img, f, r, c, b, s, p)
 
 
 def main() -> None:
@@ -127,8 +163,8 @@ def main() -> None:
         return help()
     if os.path.isfile(sys.argv[1]) is False:
         return print("Argument {} does not exist".format(sys.argv[1]))
-    if (filetype.guess(file) is None
-           or filetype.guess(file).extension != 'jpg'):
+    if (filetype.guess(sys.argv[1]) is None
+           or filetype.guess(sys.argv[1]).extension != 'jpg'):
         return print("Argument {} is not a jpeg img".format(sys.argv[1]))
     augment(sys.argv[1])
 
