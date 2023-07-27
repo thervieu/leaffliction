@@ -143,6 +143,19 @@ def load_image(type, fruit):
 
     return img_tensor
 
+def print_image_summary(images, cols=8):
+    for i in range(len(images)):
+        channels = images[i].shape[-1]
+        images_ = images[i][0]
+        rows = channels // cols
+        plt.figure(figsize=(cols*2,rows*2))
+        for i in range(channels):
+            plt.subplot(rows,cols+2,i+1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(images_[:,:,i], cmap='gray')
+        plt.subplots_adjust(wspace=0, hspace=0)
+    plt.show()
 
 def soft_vote(predictions):
     """
@@ -175,7 +188,6 @@ def hard_vote(preds):
 
     return np.argmax(pred_array) % nb_classes
 
-
 def main():
     # argument
     if len(sys.argv) != 2:
@@ -198,6 +210,14 @@ def main():
     predictions = []
     transformations = sorted(os.listdir(os.path.dirname(path)+f'/{fruit}'))
     for i in range(len(models)):
+        if False and transformations[i]=="blur":
+            image_ = load_image(transformations[i], fruit)
+            conv2d_image = image_
+            images = []
+            for layer in models[i].layers[:3]:
+                conv2d_image = layer(conv2d_image)
+                images.append(conv2d_image)
+            print_image_summary(images, cols=3)
         prediction = models[i].predict(load_image(transformations[i], fruit))
         predictions.append(prediction[0])
 
